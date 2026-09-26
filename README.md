@@ -88,6 +88,7 @@ src/models/
   artifacts.py             model and feature-importance persistence
   predict.py               inference contract for saved bundles
 src/pipeline.py            staged end-to-end run
+app/                       FastAPI + deck.gl demo: historical day replay
 tests/                     pytest suite
 ```
 
@@ -198,10 +199,47 @@ uv pip install -r requirements.txt        # runtime
 uv pip install -r requirements-dev.txt    # + pytest
 ```
 
-Dependency versions are pinned. CatBoost runs on GPU (`task_type: GPU`), LightGBM
-and XGBoost run on CPU. The `lightgbm==4.7.0` wheel from PyPI is CPU-only, which is
-all this configuration needs; `cmake` and `ninja` are only required if you build
-LightGBM from source with GPU support.
+Dependency versions are pinned, and that matters here: the saved bundles are joblib
+pickles and will not load under a different CatBoost or LightGBM than the one that
+wrote them. By default CatBoost runs on GPU (`task_type: GPU`) while LightGBM and
+XGBoost run on CPU. `cmake` and `ninja` are only needed if you build LightGBM from
+source.
+
+## Docker
+
+The image pins the exact library versions the bundles were created with, which is
+the point of running it: a bundle that fails to load on another machine usually
+means that machine resolved `catboost` or `scipy` to a different version.
+
+```bash
+sudo systemctl start docker                          # if the daemon is not running
+docker compose build
+docker compose run --rm pipeline                     # full pipeline run
+docker compose run --rm pipeline python -m pytest    # tests inside the image
+```
+
+`data/`, `models/` and `reports/` are mounted from the host rather than baked into
+the image, and none of them is in the repository. A fresh clone therefore needs at
+least `data/raw`, `data/normalized` and `data/reference` to run the pipeline, or
+`models/` plus `data/processed/features.parquet` and `data/enriched/clean.parquet`
+for inference only.
+
+The container runs on CPU by default. Because `configs/models.yaml` asks CatBoost
+for a GPU, `ML_DEVICE` overrides the device for all three libraries at once:
+
+| `ML_DEVICE` | LightGBM `device_type` | XGBoost `device` | CatBoost `task_type` |
+|---|---|---|---|
+| unset | from `models.yaml` | from `models.yaml` | from `models.yaml` |
+| `cpu` | `cpu` | `cpu` | `CPU` |
+| `gpu` | `gpu` | `cuda` | `GPU` |
+
+An unrecognised value fails at import with a clear message rather than silently
+training on the wrong device. For GPU, install nvidia-container-toolkit, add
+`gpus: all` to the service in `docker-compose.yml`, and run:
+
+```bash
+docker compose run --rm --gpus all -e ML_DEVICE=gpu pipeline
+```
 
 ## Tests
 

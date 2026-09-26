@@ -51,7 +51,8 @@ models:
     learning_rate: 0.03
     depth: 7
     l2_leaf_reg: 3.0
-    task_type: GPU
+    # CPU by default for every library; ML_DEVICE=gpu switches all three at once.
+    task_type: CPU
     thread_count: -1
 
   ensemble:

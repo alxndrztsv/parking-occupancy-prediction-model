@@ -1,0 +1,11 @@
+services:
+  pipeline:
+    build: .
+    image: parking-occupancy:latest
+    # CPU by default, as in configs/models.yaml. For GPU add `gpus: all` here and
+    # run with `-e ML_DEVICE=gpu` (requires nvidia-container-toolkit).
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - ./configs:/app/configs:ro

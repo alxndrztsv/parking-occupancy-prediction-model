@@ -1,0 +1,18 @@
+.git
+.gitignore
+.venv
+.pytest_cache
+**/__pycache__
+*.py[cod]
+catboost_info
+README.md
+
+# Inputs and artifacts: mounted as volumes, and far too large to build into the
+# image (data alone is over 1 GB).
+data
+models
+reports
+
+Dockerfile
+docker-compose.yml
+.dockerignore
