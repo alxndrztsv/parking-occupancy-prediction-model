@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parking Occupancy — Historical Day Replay</title>
+
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v3.31.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.31.0/mapbox-gl.js"></script>
+    <script src="https://unpkg.com/deck.gl@9.4.0/dist.min.js"></script>
+
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="map-container"></div>
+
+    <section class="panel metrics-bar">
+      <div class="metric">
+        <span class="metric-label">Occupancy actual</span>
+        <span class="metric-value" id="stat-now">—</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Occupancy forecast</span>
+        <span class="metric-value" id="stat-forecast">—</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">MAE vs actual</span>
+        <span class="metric-value" id="stat-mae">—</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Total occupancy</span>
+        <span class="metric-value" id="stat-total">—</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Near full ≥85%</span>
+        <span class="metric-value" id="stat-congested">—</span>
+      </div>
+    </section>
+
+    <aside class="panel legend">
+      <div class="legend-title">Occupancy</div>
+      <div class="legend-bar"></div>
+      <div class="legend-labels">
+        <span>0%</span><span>50%</span><span>100%</span>
+      </div>
+      <p class="legend-note">
+        Column height follows occupancy.
+      </p>
+    </aside>
+
+    <section class="panel controls">
+      <div id="status-bar" class="status" hidden></div>
+
+      <div class="controls-row">
+        <div class="control-grid">
+          <div class="field">
+            <span class="field-label">Date</span>
+            <div class="datefield" id="date-field">
+              <button type="button" class="input date-btn" id="date-btn">
+                <span id="date-value">—</span>
+                <svg
+                  class="date-icon"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                  <path d="M8 3v4M16 3v4M3 10h18"></path>
+                </svg>
+              </button>
+              <div class="calendar" id="calendar" hidden>
+                <div class="cal-head">
+                  <button
+                    type="button"
+                    class="cal-nav"
+                    id="cal-prev"
+                    aria-label="Previous month"
+                  >
+                    ‹
+                  </button>
+                  <span class="cal-title" id="cal-title"></span>
+                  <button
+                    type="button"
+                    class="cal-nav"
+                    id="cal-next"
+                    aria-label="Next month"
+                  >
+                    ›
+                  </button>
+                </div>
+                <div class="cal-grid" id="cal-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Model</span>
+            <div class="select" id="model-select"></div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Horizon</span>
+            <div class="select" id="horizon-select"></div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Data</span>
+            <div class="segmented" id="view-toggle">
+              <button type="button" data-view="actual" class="active">
+                Actual
+              </button>
+              <button type="button" data-view="forecast">Forecast</button>
+            </div>
+          </div>
+
+          <button type="button" id="play-btn" class="ghost-btn">Play</button>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-head">
+            <span class="field-label">Time of day</span>
+            <span class="timeline-head-right">
+              <span class="day-flag" id="day-flag"></span>
+              <span class="time-badge" id="time-badge">--:--</span>
+            </span>
+          </div>
+          <input
+            type="range"
+            id="slot-slider"
+            min="54"
+            max="119"
+            step="1"
+            value="72"
+          />
+          <div class="timeline-scale">
+            <span>09:00</span><span>12:00</span><span>15:00</span
+            ><span>19:50</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="token-modal" class="modal-backdrop" hidden>
+      <div class="panel modal-card">
+        <h2>Mapbox access token</h2>
+        <p>
+          The map needs a public Mapbox token, which starts with
+          <code>pk.eyJ…</code>. It is kept in this browser only, or you can set
+          <code>MAPBOX_TOKEN</code> in the environment before starting the
+          server.
+        </p>
+        <input
+          type="text"
+          id="token-input"
+          class="input"
+          placeholder="pk.eyJ1..."
+        />
+        <button type="button" id="save-token-btn" class="primary-btn">
+          Load map
+        </button>
+      </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>

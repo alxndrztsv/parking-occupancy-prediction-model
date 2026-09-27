@@ -88,7 +88,7 @@ src/models/
   artifacts.py             model and feature-importance persistence
   predict.py               inference contract for saved bundles
 src/pipeline.py            staged end-to-end run
-app/                       FastAPI + deck.gl demo: historical day replay
+demo/                      FastAPI + Mapbox + deck.gl viewer: historical day replay
 tests/                     pytest suite
 ```
 
@@ -240,6 +240,34 @@ training on the wrong device. For GPU, install nvidia-container-toolkit, add
 ```bash
 docker compose run --rm --gpus all -e ML_DEVICE=gpu pipeline
 ```
+
+## Demo
+
+`demo/` is a FastAPI + Mapbox GL + deck.gl viewer that replays one historical day:
+the actual occupancy of every terminal next to the forecast of any saved model
+bundle, ten minutes at a time, with a play button to animate the day.
+
+```bash
+uv pip install -r requirements-demo.txt
+cp .env.example .env       # then put your MAPBOX_TOKEN in it
+python -m uvicorn demo.server:app --reload --port 8000
+```
+
+Open http://127.0.0.1:8000. The viewer reads `data/processed/features.parquet`,
+`data/enriched/clean.parquet` and `models/*.joblib`, so the pipeline must have been
+run first. Nothing is simulated: every number on screen comes from those artifacts.
+A day is read from parquet once and cached server-side, so each step of the time
+slider is a cheap lookup (~20 ms) rather than a 1.3 s scan.
+
+Only weekday operational bins (09:00–19:50) are selectable, because that is the
+domain the models were trained on; anything else returns an explanatory error
+instead of a misleading forecast. Column height and colour follow occupancy, the
+tooltip shows the forecast against what actually happened at that horizon, and the
+metrics bar reports the MAE between them.
+
+The Mapbox token lives in `.env`, which is gitignored. A `pk.` token is public by
+design — the browser receives it through `/api/config` — so the real protection is
+a URL restriction in the Mapbox dashboard, not the ignored file.
 
 ## Tests
 

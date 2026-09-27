@@ -1,6 +1,11 @@
 # Environments
 .venv/
 
+# Secrets: never commit these
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]
